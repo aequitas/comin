@@ -34,10 +34,10 @@ var mkNixEvalMock = func(evalOk chan bool) builder.EvalFunc {
 }
 
 var mkDeployerMock = func() *deployer.Deployer {
-	var deployFunc = func(context.Context, string, string) (bool, string, error) {
+	var deployFunc = func(context.Context, string, string, bool) (bool, string, error) {
 		return false, "", nil
 	}
-	return deployer.New(deployFunc, nil)
+	return deployer.New(deployFunc, nil, false)
 }
 
 var mkNixBuildMock = func(buildOk chan bool) builder.BuildFunc {
@@ -63,10 +63,10 @@ func TestBuild(t *testing.T) {
 	f := fetcher.NewFetcher(r)
 	f.Start()
 	b := builder.New("repoPath", "", "my-machine", 2*time.Second, mkNixEvalMock(evalOk), 2*time.Second, mkNixBuildMock(buildOk))
-	var deployFunc = func(context.Context, string, string) (bool, string, error) {
+	var deployFunc = func(context.Context, string, string, bool) (bool, string, error) {
 		return false, "profile-path", nil
 	}
-	d := deployer.New(deployFunc, nil)
+	d := deployer.New(deployFunc, nil, false)
 	m := New(store.New("", 1, 1), prometheus.New(), scheduler.New(), f, b, d, "")
 	go m.Run()
 	assert.False(t, m.Fetcher.GetState().IsFetching)
@@ -161,10 +161,10 @@ func TestDeploy(t *testing.T) {
 	f := fetcher.NewFetcher(r)
 	f.Start()
 	b := builder.New("repoPath", "", "my-machine", 2*time.Second, mkNixEvalMock(evalOk), 2*time.Second, mkNixBuildMock(buildOk))
-	var deployFunc = func(context.Context, string, string) (bool, string, error) {
+	var deployFunc = func(context.Context, string, string, bool) (bool, string, error) {
 		return false, "profile-path", nil
 	}
-	d := deployer.New(deployFunc, nil)
+	d := deployer.New(deployFunc, nil, false)
 	m := New(store.New("", 1, 1), prometheus.New(), scheduler.New(), f, b, d, "")
 	go m.Run()
 	assert.False(t, m.Fetcher.GetState().IsFetching)
@@ -186,10 +186,10 @@ func TestRestartComin(t *testing.T) {
 	f := fetcher.NewFetcher(r)
 	f.Start()
 	b := builder.New("repoPath", "", "my-machine", 2*time.Second, mkNixEvalMock(evalOk), 2*time.Second, mkNixBuildMock(buildOk))
-	var deployFunc = func(context.Context, string, string) (bool, string, error) {
+	var deployFunc = func(context.Context, string, string, bool) (bool, string, error) {
 		return true, "profile-path", nil
 	}
-	d := deployer.New(deployFunc, nil)
+	d := deployer.New(deployFunc, nil, false)
 	m := New(store.New("", 1, 1), prometheus.New(), scheduler.New(), f, b, d, "")
 	go m.Run()
 

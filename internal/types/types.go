@@ -53,4 +53,5 @@ type Configuration struct {
 	ApiServer         HttpServer `yaml:"api_server"`
 	Exporter          HttpServer `yaml:"exporter"`
 	GpgPublicKeyPaths []string   `yaml:"gpg_public_key_paths"`
+	DryRun			  bool       `yaml:"dryrun" default:"false"`
 }

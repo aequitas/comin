@@ -20,6 +20,7 @@ const (
 	Running
 	Done
 	Failed
+	Pending
 )
 
 func StatusToString(status Status) string {
@@ -32,6 +33,8 @@ func StatusToString(status Status) string {
 		return "done"
 	case Failed:
 		return "failed"
+	case Pending:
+		return "pending"
 	}
 	return ""
 }
@@ -50,7 +53,7 @@ type Deployment struct {
 	Operation    string `json:"operation"`
 }
 
-type DeployFunc func(context.Context, string, string) (bool, string, error)
+type DeployFunc func(context.Context, string, string, bool) (bool, string, error)
 
 type Deployer struct {
 	GenerationCh       chan builder.Generation
@@ -65,6 +68,7 @@ type Deployer struct {
 	// Is there a generation which
 	generationAvailable   bool
 	generationAvailableCh chan struct{}
+	DryRun                bool
 }
 
 func (d Deployment) IsTesting() bool {
@@ -100,6 +104,10 @@ func showDeployment(padding string, d Deployment) {
 		fmt.Printf("%sDeployment failed %s\n", padding, humanize.Time(d.EndedAt))
 		fmt.Printf("%sOperation %s\n", padding, d.Operation)
 		fmt.Printf("%sProfilePath %s\n", padding, d.ProfilePath)
+	case Pending:
+		fmt.Printf("%sDeployment dry-run succeeded %s, manual deploy required\n", padding, humanize.Time(d.EndedAt))
+		fmt.Printf("%sOperation %s\n", padding, d.Operation)
+		fmt.Printf("%sProfilePath %s\n", padding, d.ProfilePath)
 	}
 	fmt.Printf("%sGeneration %s\n", padding, d.Generation.UUID)
 	fmt.Printf("%sCommit ID %s from %s/%s\n", padding, d.Generation.SelectedCommitId, d.Generation.SelectedRemoteName, d.Generation.SelectedBranchName)
@@ -116,12 +124,13 @@ func (s State) Show(padding string) {
 	showDeployment(padding, *s.Deployment)
 }
 
-func New(deployFunc DeployFunc, previousDeployment *Deployment) *Deployer {
+func New(deployFunc DeployFunc, previousDeployment *Deployment, dryrun bool) *Deployer {
 	return &Deployer{
 		DeploymentDoneCh:      make(chan Deployment, 1),
 		deployerFunc:          deployFunc,
 		generationAvailableCh: make(chan struct{}, 1),
 		previousDeployment:    previousDeployment,
+		DryRun:                dryrun,
 	}
 }
 
@@ -176,6 +185,7 @@ func (d *Deployer) Run() {
 				ctx,
 				g.OutPath,
 				operation,
+				d.DryRun,
 			)
 			d.mu.Lock()
 			d.IsDeploying = false
@@ -184,6 +194,8 @@ func (d *Deployer) Run() {
 			if err != nil {
 				d.Deployment.ErrorMsg = err.Error()
 				d.Deployment.Status = Failed
+			} else if d.DryRun {
+				d.Deployment.Status = Pending
 			} else {
 				d.Deployment.Status = Done
 			}

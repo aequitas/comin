@@ -187,18 +187,18 @@ func switchToConfiguration(operation string, outPath string, dryRun bool) error 
 	return nil
 }
 
-func Deploy(ctx context.Context, outPath, operation string) (needToRestartComin bool, profilePath string, err error) {
+func Deploy(ctx context.Context, outPath, operation string, dryrun bool) (needToRestartComin bool, profilePath string, err error) {
 	// FIXME: this check doesn't have to be here. It should be
 	// done by the manager.
 	beforeCominUnitFileHash := cominUnitFileHash()
 
 	// This is required to write boot entries
 	// Only do this is operation is switch or boot
-	if profilePath, err = profile.SetSystemProfile(operation, outPath, false); err != nil {
+	if profilePath, err = profile.SetSystemProfile(operation, outPath, dryrun); err != nil {
 		return
 	}
 
-	if err = switchToConfiguration(operation, outPath, false); err != nil {
+	if err = switchToConfiguration(operation, outPath, dryrun); err != nil {
 		return
 	}
 

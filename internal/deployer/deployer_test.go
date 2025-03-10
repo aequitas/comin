@@ -11,12 +11,12 @@ import (
 
 func TestDeployerBasic(t *testing.T) {
 	deployDone := make(chan struct{})
-	var deployFunc = func(context.Context, string, string) (bool, string, error) {
+	var deployFunc = func(context.Context, string, string, bool) (bool, string, error) {
 		<-deployDone
 		return false, "profile-path", nil
 	}
 
-	d := New(deployFunc, nil)
+	d := New(deployFunc, nil, false)
 	d.Run()
 	assert.False(t, d.IsDeploying)
 
@@ -42,12 +42,12 @@ func TestDeployerBasic(t *testing.T) {
 
 func TestDeployerSubmit(t *testing.T) {
 	deployDone := make(chan struct{})
-	var deployFunc = func(context.Context, string, string) (bool, string, error) {
+	var deployFunc = func(context.Context, string, string, bool) (bool, string, error) {
 		<-deployDone
 		return false, "profile-path", nil
 	}
 
-	d := New(deployFunc, nil)
+	d := New(deployFunc, nil, false)
 	d.Run()
 	assert.False(t, d.IsDeploying)
 

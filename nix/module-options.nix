@@ -174,6 +174,11 @@
         type = listOf str;
         default = [];
       };
+      dryrun = mkOption {
+        description = "Perform `dry-activate` instead of actual deployment.";
+        type = types.bool;
+        default = false;
+      };
     };
   };
 }
